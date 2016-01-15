@@ -10,26 +10,41 @@ module.exports = function (grunt) {
 			delete options.filename;
 			delete options.filenameRelative;
 
-			options.sourceFileName = path.relative(path.dirname(el.dest), el.src[0]);
+			var codeResult = '';
+			var mapResult;
 
-			if (process.platform === 'win32') {
-				options.sourceFileName = options.sourceFileName.replace(/\\/g, '/');
-			}
+			el.src.forEach(function(sf){
+				options.sourceFileName = path.relative(path.dirname(el.dest), sf);
 
-			options.sourceMapTarget = path.basename(el.dest);
+				if (process.platform === 'win32') {
+					options.sourceFileName = options.sourceFileName.replace(/\\/g, '/');
+				}
 
-			var res = babel.transformFileSync(el.src[0], options);
+				options.sourceMapTarget = path.basename(el.dest);
+
+				var res = babel.transformFileSync(sf, options)
+				codeResult += res.code;
+
+				if (res.map) {
+					if (!mapResult) {
+						mapResult = res.map;
+					} else {
+						mapResult.sources = mapResult.sources.concat(res.map.sources);
+						mapResult.names = mapResult.names.concat(res.map.names);
+						mapResult.mappings = mapResult.mappings.concat(res.map.mappings);
+						mapResult.sourcesContent = mapResult.sourcesContent.concat(res.map.sourcesContent);
+					}
+				}
+			});
+
 			var sourceMappingURL = '';
 
-			if (res.map) {
+			if (mapResult) {
 				sourceMappingURL = '\n//# sourceMappingURL=' + path.basename(el.dest) + '.map';
+				grunt.file.write(el.dest + '.map', JSON.stringify(mapResult));
 			}
 
-			grunt.file.write(el.dest, res.code + sourceMappingURL + '\n');
-
-			if (res.map) {
-				grunt.file.write(el.dest + '.map', JSON.stringify(res.map));
-			}
+			grunt.file.write(el.dest, codeResult + sourceMappingURL + '\n');
 		});
 	});
 };
