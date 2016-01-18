@@ -31,7 +31,7 @@ module.exports = function (grunt) {
 					} else {
 						mapResult.sources = mapResult.sources.concat(res.map.sources);
 						mapResult.names = mapResult.names.concat(res.map.names);
-						mapResult.mappings = mapResult.mappings.concat(res.map.mappings);
+						mapResult.mappings = mapResult.mappings + ';' + res.map.mappings;
 						mapResult.sourcesContent = mapResult.sourcesContent.concat(res.map.sourcesContent);
 					}
 				}
